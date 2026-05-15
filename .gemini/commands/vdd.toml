@@ -1,0 +1,2 @@
+description = "Visual-Driven Development (VDD) flow. Commands: start [name], resume [name], fork [existing] [new], status."
+prompt = "Activate the 'vdd' skill and execute the VDD flow with these arguments: {{args}}"

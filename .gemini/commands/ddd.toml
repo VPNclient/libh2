@@ -1,0 +1,2 @@
+description = "Document-Driven Development (DDD) flow. Commands: start [name], resume [name], fork [existing] [new], status."
+prompt = "Activate the 'ddd' skill and execute the DDD flow with these arguments: {{args}}"

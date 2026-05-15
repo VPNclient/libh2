@@ -1,0 +1,2 @@
+description = "Legacy code reverse engineering. Commands: [path] [comment]."
+prompt = "Activate the 'legacy' skill and execute the Legacy analysis flow with these arguments: {{args}}"

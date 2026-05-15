@@ -1,0 +1,2 @@
+description = "BFS Waterfall orchestration. Commands: status, compile, gaps."
+prompt = "Activate the 'waterfall' skill and execute the Waterfall BFS flow with these arguments: {{args}}"

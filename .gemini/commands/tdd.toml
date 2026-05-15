@@ -1,0 +1,2 @@
+description = "Tests-Driven Development (TDD) flow. Commands: start [name], resume [name], fork [existing] [new], status."
+prompt = "Activate the 'tdd' skill and execute the TDD flow with these arguments: {{args}}"

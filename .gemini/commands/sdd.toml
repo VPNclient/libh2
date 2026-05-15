@@ -1,0 +1,2 @@
+description = "Spec-Driven Development (SDD) flow. Commands: start [name], resume [name], fork [existing] [new], status."
+prompt = "Activate the 'sdd' skill and execute the SDD flow with these arguments: {{args}}"

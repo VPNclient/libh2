@@ -1,0 +1,2 @@
+description = "Manage Architecture Decision Records (ADR). Commands: start [name], resume [name], quick [name], list, status."
+prompt = "Activate the 'adr' skill and execute the ADR flow with these arguments: {{args}}"

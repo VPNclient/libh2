@@ -1,0 +1,2 @@
+description = "DFS Roadmap orchestration. Commands: [goal], status."
+prompt = "Activate the 'roadmap' skill and execute the Roadmap DFS flow with these arguments: {{args}}"
