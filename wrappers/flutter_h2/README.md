@@ -1,13 +1,13 @@
 # flutter_h2
 
-H2 VPN Engine for Flutter — drop-in replacement for `vpnclient_engine_flutter` using h2.core backend.
+Flutter plugin for h2.core HTTPS VPN. Drop-in replacement for `vpnclient_engine_flutter`.
 
 ## Features
 
-- **API Compatible** — Same interface as `vpnclient_engine_flutter`
-- **HTTPS/H2 Tunnel** — DPI-resistant VPN over standard HTTPS
-- **SOCKS5 Proxy** — Local proxy for app traffic routing
-- **Cross-Platform** — iOS and Android support via gomobile
+- **API Compatible** - Same interface as `vpnclient_engine_flutter`
+- **HTTPS/H2 Tunnel** - DPI-resistant VPN over standard HTTPS
+- **SOCKS5 Proxy** - Local proxy for app traffic routing (no VPN permissions)
+- **Cross-Platform** - iOS and Android support via gomobile
 
 ## Installation
 
@@ -16,107 +16,75 @@ Add to your `pubspec.yaml`:
 ```yaml
 dependencies:
   flutter_h2:
-    path: ../engines/flutter_h2
+    path: path/to/flutter_h2
 ```
 
-### Build Requirements
-
-Before using, you need to build the native frameworks:
-
-```bash
-# 1. Build gomobile frameworks (requires Go 1.22)
-cd vendors/h2.core
-./build/mobile.sh ios      # Creates H2Core.xcframework
-./build/mobile.sh android  # Creates h2core.aar
-
-# 2. Copy to plugin
-cd engines/flutter_h2
-./build/copy_frameworks.sh
-```
-
-## Usage
-
-### Basic Example
+## Quick Start
 
 ```dart
 import 'package:flutter_h2/flutter_h2.dart';
 
-// Get singleton instance
 final engine = VpnClientEngine.instance;
 
-// Configure
-final config = VpnEngineConfig(
+// Initialize
+await engine.initialize(VpnEngineConfig(
   core: CoreConfig(
     type: CoreType.h2,
     configJson: '{}',
     serverAddress: 'vpn.example.com',
     serverPort: 443,
-    protocol: 'us',  // crypto provider: us, ua, cn, th, fr, uk
+    protocol: 'us', // crypto provider
   ),
-);
+));
 
-// Initialize and connect
-await engine.initialize(config);
+// Connect - starts local SOCKS5 proxy
 await engine.connect();
 
-// Get SOCKS5 proxy port
+// Get proxy port
 final port = engine.getSocksPort();
 print('SOCKS5 proxy at 127.0.0.1:$port');
 
-// Disconnect when done
+// Disconnect
 await engine.disconnect();
 ```
 
-### Using SOCKS5 Proxy
+## Using the SOCKS5 Proxy
 
-H2 engine provides a local SOCKS5 proxy. Configure your HTTP client to use it:
+H2 provides a local SOCKS5 proxy. Configure your HTTP client:
 
 ```dart
 import 'dart:io';
 
-final engine = VpnClientEngine.instance;
-await engine.connect();
-
 final port = engine.getSocksPort();
 
-// Configure HttpClient
-final httpClient = HttpClient();
-httpClient.findProxy = (uri) => 'SOCKS5 127.0.0.1:$port';
+// With HttpClient
+final httpClient = HttpClient()
+  ..findProxy = (uri) => 'SOCKS5 127.0.0.1:$port';
+
+// With Dio
+(dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+  final client = HttpClient();
+  client.findProxy = (uri) => 'SOCKS5 127.0.0.1:$port';
+  return client;
+};
 ```
 
-### Listening to Events
+## Listening to Events
 
 ```dart
 // Status changes
 engine.statusStream.listen((status) {
-  print('Status: ${status.toNativeString()}');
+  print('Status: $status');
 });
 
 // Traffic statistics
 engine.statsStream.listen((stats) {
-  print('Up: ${stats.formattedBytesSent}');
-  print('Down: ${stats.formattedBytesReceived}');
+  print('Up: ${stats.bytesSent}, Down: ${stats.bytesReceived}');
 });
 
 // Logs
 engine.logStream.listen((log) {
   print('[${log['level']}] ${log['message']}');
-});
-```
-
-### Using Callbacks
-
-```dart
-engine.setStatusCallback((status) {
-  print('Status: $status');
-});
-
-engine.setStatsCallback((stats) {
-  print('Traffic: ${stats.formattedTotalBytes}');
-});
-
-engine.setLogCallback((level, message) {
-  print('[$level] $message');
 });
 ```
 
@@ -161,14 +129,10 @@ class ConnectionStats {
   final int packetsSent;
   final int packetsReceived;
   final int latencyMs;
-
-  String get formattedBytesSent;
-  String get formattedBytesReceived;
-  String get formattedTotalBytes;
 }
 ```
 
-### VpnEngineConfig
+### Configuration
 
 ```dart
 VpnEngineConfig(
@@ -177,9 +141,8 @@ VpnEngineConfig(
     configJson: '{}',
     serverAddress: 'vpn.example.com',
     serverPort: 443,
-    protocol: 'us',  // crypto provider
+    protocol: 'us',  // crypto provider: us, ua, cn, th, fr, uk
   ),
-  // driver config is ignored (h2 uses SOCKS5)
 )
 ```
 
@@ -196,7 +159,6 @@ VpnEngineConfig(
 
 2. Add SOCKS5 proxy configuration:
    ```dart
-   // After connect(), configure your HTTP client
    final port = engine.getSocksPort();
    httpClient.findProxy = (uri) => 'SOCKS5 127.0.0.1:$port';
    ```
@@ -207,19 +169,18 @@ VpnEngineConfig(
 |---------|-------------------------|------------|
 | Tunnel | TUN device | SOCKS5 proxy |
 | Traffic routing | System-wide | Per-app (proxy) |
-| New method | — | `getSocksPort()` |
-| Core type | xray, v2ray, sing | h2 |
+| VPN permissions | Required | Not required |
+| New method | - | `getSocksPort()` |
 
 ## Platform Support
 
-| Platform | Status |
-|----------|--------|
-| iOS | Supported (13.0+) |
-| Android | Supported (API 24+) |
-| macOS | Not supported |
-| Windows | Not supported |
-| Linux | Not supported |
-| Web | Not supported |
+| Platform | Status | Min Version |
+|----------|--------|-------------|
+| iOS | Supported | 13.0 |
+| Android | Supported | API 24 |
+| macOS | Not supported | - |
+| Windows | Not supported | - |
+| Linux | Not supported | - |
 
 ## Project Structure
 
@@ -229,55 +190,50 @@ flutter_h2/
 │   ├── flutter_h2.dart              # Library exports
 │   └── src/
 │       ├── vpnclient_engine.dart    # Main engine class
-│       └── models/
-│           ├── connection_status.dart
-│           ├── connection_stats.dart
-│           ├── config.dart
-│           ├── core_type.dart
-│           └── driver_type.dart
+│       └── models/                  # Data models
 ├── ios/
 │   ├── Classes/FlutterH2Plugin.swift
-│   ├── Frameworks/                  # H2Core.xcframework (built)
+│   ├── Frameworks/H2Core.xcframework
 │   └── flutter_h2.podspec
 ├── android/
 │   ├── src/.../FlutterH2Plugin.kt
-│   ├── libs/                        # h2core.aar (built)
+│   ├── libs/h2core.aar
 │   └── build.gradle.kts
-├── build/
-│   └── copy_frameworks.sh           # Build helper
-├── test/
-│   └── flutter_h2_test.dart
-└── example/
-    └── lib/main.dart
+└── test/
+    └── flutter_h2_test.dart
 ```
 
 ## Building Native Frameworks
 
-### Prerequisites
-
-- Go 1.22 (gomobile has issues with Go 1.25)
-- Xcode (for iOS)
-- Android SDK/NDK (for Android)
-- gomobile: `go install golang.org/x/mobile/cmd/gomobile@latest`
-
-### Build Commands
+The plugin includes pre-built native libraries. To rebuild:
 
 ```bash
-cd vendors/h2.core
+# Go to libh2 root
+cd ../..
 
 # Build iOS framework
-./build/mobile.sh ios
-# Output: dist/mobile/H2Core.xcframework
+./build/gomobile.sh ios
 
 # Build Android AAR
-./build/mobile.sh android
-# Output: dist/mobile/h2core.aar
+./build/gomobile.sh android
 
 # Copy to plugin
-cd ../../engines/flutter_h2
-./build/copy_frameworks.sh
+./build/copy_to_flutter.sh
+```
+
+### Prerequisites
+
+- Go 1.21+
+- gomobile: `go install golang.org/x/mobile/cmd/gomobile@latest`
+- Xcode (for iOS)
+- Android NDK (for Android)
+
+## Tests
+
+```bash
+flutter test
 ```
 
 ## License
 
-See LICENSE file.
+Proprietary - NativeMind
