@@ -28,8 +28,8 @@ libh2/
 
 | Name | Status File | Current Phase |
 |------|-------------|---------------|
-| `sdd-swift-h2` | `flows/sdd-swift-h2/_status.md` | IMPLEMENTATION (ready to build) |
-| `sdd-kotlin-h2` | `flows/sdd-kotlin-h2/_status.md` | IMPLEMENTATION (ready to build) |
+| `sdd-swift-h2` | `flows/sdd-swift-h2/_status.md` | COMPLETE |
+| `sdd-kotlin-h2` | `flows/sdd-kotlin-h2/_status.md` | COMPLETE |
 | `sdd-flutter-h2` | `flows/sdd-flutter-h2/_status.md` | COMPLETE |
 <!-- FLOWS_INDEX_END -->
 
